@@ -1,15 +1,16 @@
 --==================================================
--- MMA EXCLUSIVE | LINKVERTISE / PASTEBIN KEY SYSTEM
+-- MMA EXCLUSIVE | LINKVERTISE + PASTEBIN KEY SYSTEM
+-- STABLE / EXECUTOR-SAFE / NO FAULTY ENDINGS
 --==================================================
 
 repeat task.wait() until game:IsLoaded()
 
 --======================
--- KEY SYSTEM SETTINGS
+-- CONFIG
 --======================
 
-local LINKVERTISE_URL = "https://linkvertise.com/2635108/5ATa2RAwLzqJ"
-local PASTEBIN_RAW = "https://pastebin.com/raw/S9KC3DyN"
+local LINKVERTISE_URL = "https://linkvertise.com/YOUR-LINK"
+local PASTEBIN_RAW   = "https://pastebin.com/raw/YOURRAW"
 
 --======================
 -- SERVICES
@@ -18,7 +19,6 @@ local PASTEBIN_RAW = "https://pastebin.com/raw/S9KC3DyN"
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 --======================
@@ -33,27 +33,23 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local ValidKeys = {}
 
-local function fetchKeys()
-	local success, result = pcall(function()
+local function FetchKeys()
+	local ok, data = pcall(function()
 		return game:HttpGet(PASTEBIN_RAW)
 	end)
 
-	if success and result then
-		for line in string.gmatch(result, "[^\r\n]+") do
-			table.insert(ValidKeys, tostring(line))
+	if ok and type(data) == "string" then
+		for line in string.gmatch(data, "[^\r\n]+") do
+			table.insert(ValidKeys, line)
 		end
 	end
 end
 
-fetchKeys()
+FetchKeys()
 
---======================
--- KEY CHECK FUNCTION
---======================
-
-local function isValidKey(input)
-	for _, key in ipairs(ValidKeys) do
-		if input == key then
+local function IsValidKey(key)
+	for _, v in ipairs(ValidKeys) do
+		if v == key then
 			return true
 		end
 	end
@@ -61,49 +57,83 @@ local function isValidKey(input)
 end
 
 --======================
--- KEY PROMPT
+-- SIMPLE KEY INPUT UI
 --======================
 
-local enteredKey = nil
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
-Rayfield:Prompt({
-	Title = "MMA EXCLUSIVE",
-	Subtitle = "Key System",
-	Content = "Get your key from Linkvertise",
-	Actions = {
-		Submit = {
-			Name = "Submit",
-			Callback = function(text)
-				enteredKey = text
-			end
-		},
-		GetKey = {
-			Name = "Get Key",
-			Callback = function()
-				setclipboard(LINKVERTISE_URL)
-				Rayfield:Notify({
-					Title = "Link Copied",
-					Content = "Linkvertise URL copied to clipboard",
-					Duration = 4
-				})
-			end
-		}
-	}
-})
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.fromScale(0.3, 0.3)
+Frame.Position = UDim2.fromScale(0.35, 0.35)
+Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+Frame.BorderSizePixel = 0
 
-repeat task.wait() until enteredKey ~= nil
+local Corner = Instance.new("UICorner", Frame)
+Corner.CornerRadius = UDim.new(0, 16)
 
-if not isValidKey(enteredKey) then
-	Rayfield:Notify({
-		Title = "Invalid Key",
-		Content = "The key you entered is incorrect.",
-		Duration = 6
-	})
-	return
-end
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0.25, 0)
+Title.Text = "MMA EXCLUSIVE"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22
+
+local Box = Instance.new("TextBox", Frame)
+Box.Size = UDim2.new(0.9, 0, 0.25, 0)
+Box.Position = UDim2.new(0.05, 0, 0.35, 0)
+Box.PlaceholderText = "Enter key here"
+Box.Text = ""
+Box.Font = Enum.Font.Gotham
+Box.TextSize = 14
+Box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+Box.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 12)
+
+local Submit = Instance.new("TextButton", Frame)
+Submit.Size = UDim2.new(0.4, 0, 0.2, 0)
+Submit.Position = UDim2.new(0.05, 0, 0.7, 0)
+Submit.Text = "Submit"
+Submit.Font = Enum.Font.GothamBold
+Submit.TextSize = 14
+Submit.BackgroundColor3 = Color3.fromRGB(90, 0, 180)
+Submit.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Submit).CornerRadius = UDim.new(0, 12)
+
+local GetKey = Instance.new("TextButton", Frame)
+GetKey.Size = UDim2.new(0.4, 0, 0.2, 0)
+GetKey.Position = UDim2.new(0.55, 0, 0.7, 0)
+GetKey.Text = "Get Key"
+GetKey.Font = Enum.Font.GothamBold
+GetKey.TextSize = 14
+GetKey.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+GetKey.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", GetKey).CornerRadius = UDim.new(0, 12)
+
+local KeyAccepted = false
+
+GetKey.MouseButton1Click:Connect(function()
+	pcall(function()
+		setclipboard(LINKVERTISE_URL)
+	end)
+end)
+
+Submit.MouseButton1Click:Connect(function()
+	if IsValidKey(Box.Text) then
+		KeyAccepted = true
+		ScreenGui:Destroy()
+	else
+		Box.Text = ""
+		Box.PlaceholderText = "Invalid key"
+	end
+end)
+
+repeat task.wait() until KeyAccepted == true
 
 --======================
--- WINDOW (PURPLE / BLACK)
+-- RAYFIELD WINDOW
 --======================
 
 local Window = Rayfield:CreateWindow({
@@ -111,101 +141,20 @@ local Window = Rayfield:CreateWindow({
 	LoadingTitle = "MMA EXCLUSIVE",
 	LoadingSubtitle = "Purple / Black Edition",
 	ConfigurationSaving = { Enabled = false },
-	KeySystem = false,
-
-	Theme = {
-		TextColor = Color3.fromRGB(230, 230, 255),
-		Background = Color3.fromRGB(15, 15, 20),
-		Topbar = Color3.fromRGB(20, 20, 30),
-		Shadow = Color3.fromRGB(0, 0, 0),
-		NotificationBackground = Color3.fromRGB(25, 25, 40),
-		NotificationActionsBackground = Color3.fromRGB(90, 0, 180)
-	}
+	KeySystem = false
 })
 
-local MainTab = Window:CreateTab("Main", 4483362458)
-
---======================
--- ADOPT ME REMOTES (SAFE)
---======================
-
-local TradeRemotes = {
-	AddItem = nil,
-	ClearTrade = nil,
-	StartTrade = nil,
-	Accept = nil,
-	Unaccept = nil
-}
-
-pcall(function()
-	for _, folder in ipairs({
-		ReplicatedStorage:FindFirstChild("TradeAPI"),
-		ReplicatedStorage:FindFirstChild("Trade"),
-		ReplicatedStorage:FindFirstChild("Trading"),
-		ReplicatedStorage:FindFirstChild("Remotes")
-	}) do
-		if folder then
-			for _, v in ipairs(folder:GetDescendants()) do
-				if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-					local n = v.Name:lower()
-					if n:find("add") then TradeRemotes.AddItem = v
-					elseif n:find("clear") then TradeRemotes.ClearTrade = v
-					elseif n:find("start") then TradeRemotes.StartTrade = v
-					elseif n:find("accept") then TradeRemotes.Accept = v
-					elseif n:find("unaccept") then TradeRemotes.Unaccept = v end
-				end
-			end
-		end
-	end
-end)
-
---======================
--- BUTTONS
---======================
-
-MainTab:CreateButton({
-	Name = "🟣 Add Random Item",
-	Callback = function()
-		if TradeRemotes.AddItem then pcall(function() TradeRemotes.AddItem:FireServer() end) end
-	end
-})
-
-MainTab:CreateButton({
-	Name = "🔴 Clear Trade",
-	Callback = function()
-		if TradeRemotes.ClearTrade then pcall(function() TradeRemotes.ClearTrade:FireServer() end) end
-	end
-})
-
-MainTab:CreateButton({
-	Name = "🟢 Start Trade",
-	Callback = function()
-		if TradeRemotes.StartTrade then pcall(function() TradeRemotes.StartTrade:FireServer() end) end
-	end
-})
-
-MainTab:CreateButton({
-	Name = "✅ Make Partner Accept",
-	Callback = function()
-		if TradeRemotes.Accept then pcall(function() TradeRemotes.Accept:FireServer(true) end) end
-	end
-})
-
-MainTab:CreateButton({
-	Name = "❌ Make Partner Unaccept",
-	Callback = function()
-		if TradeRemotes.Unaccept then pcall(function() TradeRemotes.Unaccept:FireServer(false) end) end
-	end
-})
+local Tab = Window:CreateTab("Main", 4483362458)
 
 --======================
 -- NOCLIP
 --======================
 
-local noclip, conn = false, nil
+local noclip = false
+local conn
 
-MainTab:CreateToggle({
-	Name = "🔁 Toggle Noclip",
+Tab:CreateToggle({
+	Name = "Toggle Noclip",
 	CurrentValue = false,
 	Callback = function(v)
 		noclip = v
@@ -214,7 +163,9 @@ MainTab:CreateToggle({
 				local c = LocalPlayer.Character
 				if c then
 					for _, p in ipairs(c:GetDescendants()) do
-						if p:IsA("BasePart") then p.CanCollide = false end
+						if p:IsA("BasePart") then
+							p.CanCollide = false
+						end
 					end
 				end
 			end)
