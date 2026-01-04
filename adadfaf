@@ -1,48 +1,133 @@
 --==================================================
--- MMA EXCLUSIVE | PURPLE / BLACK RAYFIELD
+-- MMA EXCLUSIVE | LINKVERTISE / PASTEBIN KEY SYSTEM
 --==================================================
 
 repeat task.wait() until game:IsLoaded()
 
--- Services
+--======================
+-- KEY SYSTEM SETTINGS
+--======================
+
+local LINKVERTISE_URL = "https://linkvertise.com/2635108/5ATa2RAwLzqJ"
+local PASTEBIN_RAW = "https://pastebin.com/raw/S9KC3DyN"
+
+--======================
+-- SERVICES
+--======================
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
--- Load Rayfield (executor-safe)
+--======================
+-- LOAD RAYFIELD
+--======================
+
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
---==================================================
--- WINDOW (PURPLE / BLACK THEME)
---==================================================
+--======================
+-- FETCH VALID KEYS
+--======================
+
+local ValidKeys = {}
+
+local function fetchKeys()
+	local success, result = pcall(function()
+		return game:HttpGet(PASTEBIN_RAW)
+	end)
+
+	if success and result then
+		for line in string.gmatch(result, "[^\r\n]+") do
+			table.insert(ValidKeys, tostring(line))
+		end
+	end
+end
+
+fetchKeys()
+
+--======================
+-- KEY CHECK FUNCTION
+--======================
+
+local function isValidKey(input)
+	for _, key in ipairs(ValidKeys) do
+		if input == key then
+			return true
+		end
+	end
+	return false
+end
+
+--======================
+-- KEY PROMPT
+--======================
+
+local enteredKey = nil
+
+Rayfield:Prompt({
+	Title = "MMA EXCLUSIVE",
+	Subtitle = "Key System",
+	Content = "Get your key from Linkvertise",
+	Actions = {
+		Submit = {
+			Name = "Submit",
+			Callback = function(text)
+				enteredKey = text
+			end
+		},
+		GetKey = {
+			Name = "Get Key",
+			Callback = function()
+				setclipboard(LINKVERTISE_URL)
+				Rayfield:Notify({
+					Title = "Link Copied",
+					Content = "Linkvertise URL copied to clipboard",
+					Duration = 4
+				})
+			end
+		}
+	}
+})
+
+repeat task.wait() until enteredKey ~= nil
+
+if not isValidKey(enteredKey) then
+	Rayfield:Notify({
+		Title = "Invalid Key",
+		Content = "The key you entered is incorrect.",
+		Duration = 6
+	})
+	return
+end
+
+--======================
+-- WINDOW (PURPLE / BLACK)
+--======================
 
 local Window = Rayfield:CreateWindow({
 	Name = "MMA EXCLUSIVE",
 	LoadingTitle = "MMA EXCLUSIVE",
 	LoadingSubtitle = "Purple / Black Edition",
-	ConfigurationSaving = {
-		Enabled = false
-	},
+	ConfigurationSaving = { Enabled = false },
 	KeySystem = false,
 
-	-- Custom Theme (safe even if ignored)
 	Theme = {
 		TextColor = Color3.fromRGB(230, 230, 255),
 		Background = Color3.fromRGB(15, 15, 20),
 		Topbar = Color3.fromRGB(20, 20, 30),
 		Shadow = Color3.fromRGB(0, 0, 0),
 		NotificationBackground = Color3.fromRGB(25, 25, 40),
-		NotificationActionsBackground = Color3.fromRGB(60, 0, 120)
+		NotificationActionsBackground = Color3.fromRGB(90, 0, 180)
 	}
 })
 
--- Main Tab
 local MainTab = Window:CreateTab("Main", 4483362458)
 
---==================================================
--- ADOPT ME TRADE REMOTE AUTO-DETECT (SAFE)
---==================================================
+--======================
+-- ADOPT ME REMOTES (SAFE)
+--======================
 
 local TradeRemotes = {
 	AddItem = nil,
@@ -53,141 +138,95 @@ local TradeRemotes = {
 }
 
 pcall(function()
-	local foldersToCheck = {
+	for _, folder in ipairs({
 		ReplicatedStorage:FindFirstChild("TradeAPI"),
 		ReplicatedStorage:FindFirstChild("Trade"),
 		ReplicatedStorage:FindFirstChild("Trading"),
 		ReplicatedStorage:FindFirstChild("Remotes")
-	}
-
-	for _, folder in ipairs(foldersToCheck) do
+	}) do
 		if folder then
 			for _, v in ipairs(folder:GetDescendants()) do
 				if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-					local n = string.lower(v.Name)
-					if n:find("add") then
-						TradeRemotes.AddItem = v
-					elseif n:find("clear") then
-						TradeRemotes.ClearTrade = v
-					elseif n:find("start") then
-						TradeRemotes.StartTrade = v
-					elseif n:find("accept") then
-						TradeRemotes.Accept = v
-					elseif n:find("unaccept") then
-						TradeRemotes.Unaccept = v
-					end
+					local n = v.Name:lower()
+					if n:find("add") then TradeRemotes.AddItem = v
+					elseif n:find("clear") then TradeRemotes.ClearTrade = v
+					elseif n:find("start") then TradeRemotes.StartTrade = v
+					elseif n:find("accept") then TradeRemotes.Accept = v
+					elseif n:find("unaccept") then TradeRemotes.Unaccept = v end
 				end
 			end
 		end
 	end
 end)
 
---==================================================
--- BUTTONS (RAYFIELD STYLE)
---==================================================
+--======================
+-- BUTTONS
+--======================
 
 MainTab:CreateButton({
 	Name = "🟣 Add Random Item",
 	Callback = function()
-		if TradeRemotes.AddItem then
-			pcall(function()
-				TradeRemotes.AddItem:FireServer()
-			end)
-		end
+		if TradeRemotes.AddItem then pcall(function() TradeRemotes.AddItem:FireServer() end) end
 	end
 })
 
 MainTab:CreateButton({
 	Name = "🔴 Clear Trade",
 	Callback = function()
-		if TradeRemotes.ClearTrade then
-			pcall(function()
-				TradeRemotes.ClearTrade:FireServer()
-			end)
-		end
+		if TradeRemotes.ClearTrade then pcall(function() TradeRemotes.ClearTrade:FireServer() end) end
 	end
 })
 
 MainTab:CreateButton({
 	Name = "🟢 Start Trade",
 	Callback = function()
-		if TradeRemotes.StartTrade then
-			pcall(function()
-				TradeRemotes.StartTrade:FireServer()
-			end)
-		end
-	end
-})
-
-MainTab:CreateButton({
-	Name = "🚫 Block Player",
-	Callback = function()
-		print("Block Player clicked")
+		if TradeRemotes.StartTrade then pcall(function() TradeRemotes.StartTrade:FireServer() end) end
 	end
 })
 
 MainTab:CreateButton({
 	Name = "✅ Make Partner Accept",
 	Callback = function()
-		if TradeRemotes.Accept then
-			pcall(function()
-				TradeRemotes.Accept:FireServer(true)
-			end)
-		end
+		if TradeRemotes.Accept then pcall(function() TradeRemotes.Accept:FireServer(true) end) end
 	end
 })
 
 MainTab:CreateButton({
 	Name = "❌ Make Partner Unaccept",
 	Callback = function()
-		if TradeRemotes.Unaccept then
-			pcall(function()
-				TradeRemotes.Unaccept:FireServer(false)
-			end)
-		end
+		if TradeRemotes.Unaccept then pcall(function() TradeRemotes.Unaccept:FireServer(false) end) end
 	end
 })
 
---==================================================
--- NOCLIP TOGGLE (WORKING IN ALL GAMES)
---==================================================
+--======================
+-- NOCLIP
+--======================
 
-local NoclipEnabled = false
-local NoclipConnection
+local noclip, conn = false, nil
 
 MainTab:CreateToggle({
 	Name = "🔁 Toggle Noclip",
 	CurrentValue = false,
-	Flag = "Noclip",
-	Callback = function(Value)
-		NoclipEnabled = Value
-
-		if NoclipEnabled then
-			NoclipConnection = RunService.Stepped:Connect(function()
-				local char = LocalPlayer.Character
-				if char then
-					for _, part in ipairs(char:GetDescendants()) do
-						if part:IsA("BasePart") then
-							part.CanCollide = false
-						end
+	Callback = function(v)
+		noclip = v
+		if noclip then
+			conn = RunService.Stepped:Connect(function()
+				local c = LocalPlayer.Character
+				if c then
+					for _, p in ipairs(c:GetDescendants()) do
+						if p:IsA("BasePart") then p.CanCollide = false end
 					end
 				end
 			end)
-		else
-			if NoclipConnection then
-				NoclipConnection:Disconnect()
-				NoclipConnection = nil
-			end
+		elseif conn then
+			conn:Disconnect()
+			conn = nil
 		end
 	end
 })
 
---==================================================
--- NOTIFICATION
---==================================================
-
 Rayfield:Notify({
 	Title = "MMA EXCLUSIVE",
-	Content = "Loaded successfully (Purple / Black)",
+	Content = "Key accepted. Loaded successfully.",
 	Duration = 5
 })
